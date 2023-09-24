@@ -1,55 +1,84 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class EnemyHandleCollider : MonoBehaviour
 {
-    private EnemyController m_EnmCtrl;
-    private EnemyStats m_EnmStats;
-    private bool m_GetHit;
-    private bool m_isDetectPlayer;
+    public Action OnEnemyGetHit;
 
+    private EnemyCfg m_EnemyCfg;
+    private EnemyController m_EnmCtrl;
+    private int m_curHp;
+    private bool m_GetHit;
 
     private void Awake()
     {
         m_EnmCtrl = GetComponent<EnemyController>();
-        m_EnmStats = GetComponent<EnemyStats>();
+        m_EnemyCfg = m_EnmCtrl.m_EnemyCfg;
+    }
+
+    private void OnEnable()
+    {
+        Hp = m_EnemyCfg.maxHp;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (m_GetHit)
+        if (GetHit)
             return;
 
-        if (collision.gameObject.CompareTag("AtkPlayer") && m_isDetectPlayer)
+        if (collision.gameObject.CompareTag("AtkPlayer") && m_EnmCtrl.GetisDetectPlayer())
         {
-            m_GetHit = true;
+            GetHit = true;
             m_EnmCtrl.SetStateHit();
+            Invoke("GetHitFalse", 0.5f);
             AudioManager.Instance.PlaySfxEnemyGetHit();
+            PlayerCfg playerCfg = PlayerStats.Instance.playerCfg;
 
-            m_EnmStats.Hp -= 1;
-            if (m_EnmStats.Hp <= 0)
+            if (collision.gameObject.GetComponent<MagicCtrl>())
+                Hp -= collision.gameObject.GetComponent<MagicCtrl>().magicCfg.damage + playerCfg.damage;
+            else
+                Hp -= playerCfg.damage;
+
+
+            if (Hp <= 0)
             {
-                PlayerStats.Instance.Exp += m_EnmStats.Exp;
-                Destroy(GameObject.Find("AngryPig"));
+                SpawmManager.Instance.SpawmCoin(transform.position, m_EnemyCfg.coinDrop);
+                Vector2 pos = new Vector2(transform.position.x, transform.position.y + 0.5f);
+                SpawmManager.Instance.SpawmExp(pos, m_EnemyCfg.Exp);
+
+                playerCfg.UpdateQuantyQues(gameObject);
+                if (PlayerStats.Instance.OnQuantyQuesChange != null)
+                    PlayerStats.Instance.OnQuantyQuesChange();
+
+                GetHit = false;
+                Hp = m_EnemyCfg.maxHp;
+                m_EnmCtrl.ReleaseEnemy();
             }
         }
     }
 
-    public void SetGetHit(bool isHit)
+    public int Hp
     {
-        m_GetHit = isHit;
+        get { return m_curHp; }
+        set 
+        {
+            m_curHp = value; 
+            if (OnEnemyGetHit != null)
+                OnEnemyGetHit(); 
+        }
     }
 
-    public void SetDetectPlayer(bool isDetect)
+    private void GetHitFalse()
     {
-        m_isDetectPlayer = isDetect;
-        if (!isDetect)
-            m_EnmCtrl.SetStateIdle();
+        GetHit = false;
     }
 
-    public bool GetIsDetectPlayer()
+    public bool GetHit
     {
-        return m_isDetectPlayer;
+        get { return m_GetHit; }
+        set { m_GetHit = value; }
     }
+
 }

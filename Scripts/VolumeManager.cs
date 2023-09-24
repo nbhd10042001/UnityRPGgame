@@ -13,41 +13,48 @@ public class VolumeManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI m_txtVolumeEffect;
 
     private AudioManager m_AudioManager;
-    private float m_curValueMusic;
-    private float m_curValueEffect;
 
     private void Awake()
     {
         m_AudioManager = FindObjectOfType<AudioManager>();
 
-        m_curValueMusic = PlayerPrefs.GetFloat("vMusic");
-        m_curValueEffect = PlayerPrefs.GetFloat("vEffect");
+        if (PlayerPrefs.GetInt("isF") == 0)
+        {
+            m_sliderMusic.value = 1;
+            PlayerPrefs.SetFloat("vMusic", 1);
+            m_txtVolumeMusic.text = $"{(int)(m_sliderMusic.value * 100)}%";
 
-        if (m_curValueMusic == 0)
-            m_curValueMusic = m_sliderMusic.value;
-        m_sliderMusic.value = m_curValueMusic;
-        m_txtVolumeMusic.text = $"{(int)(m_curValueMusic * 100)}%";
 
-        if (m_curValueEffect == 0)
-            m_curValueEffect = m_sliderEffect.value;
-        m_sliderEffect.value = m_curValueEffect;
-        m_txtVolumeEffect.text = $"{(int)(m_curValueEffect * 100)}%";
+            m_sliderEffect.value = 1;
+            PlayerPrefs.SetFloat("vEffect", 1);
+            m_txtVolumeEffect.text = $"{(int)(m_sliderEffect.value * 100)}%";
+
+            PlayerPrefs.SetInt("isF", 1);
+        }
+        else
+        {
+            m_sliderMusic.value = PlayerPrefs.GetFloat("vMusic");
+            m_txtVolumeMusic.text = $"{(int)(m_sliderMusic.value * 100)}%";
+
+            m_sliderEffect.value = PlayerPrefs.GetFloat("vEffect");
+            m_txtVolumeEffect.text = $"{(int)(m_sliderEffect.value * 100)}%";
+        }
     }
 
 
     public void onValueVolumeMusicChanged()
     {
-        m_curValueMusic = m_sliderMusic.value;
-        PlayerPrefs.SetFloat("vMusic", m_curValueMusic);
-        m_txtVolumeMusic.text = $"{(int)(m_curValueMusic * 100)}%";
+        m_txtVolumeMusic.text = $"{(int)(m_sliderMusic.value * 100)}%";
+
+        PlayerPrefs.SetFloat("vMusic", m_sliderMusic.value);
         m_AudioManager.SetVolumeSourceMusic(PlayerPrefs.GetFloat("vMusic"));
     }
 
     public void onValueVolumeEffectChanged()
     {
-        m_curValueEffect = m_sliderEffect.value;
-        PlayerPrefs.SetFloat("vEffect", m_curValueEffect);
-        m_txtVolumeEffect.text = $"{(int)(m_curValueEffect * 100)}%";
+        m_txtVolumeEffect.text = $"{(int)(m_sliderEffect.value * 100)}%";
+
+        PlayerPrefs.SetFloat("vEffect", m_sliderEffect.value);
         m_AudioManager.SetVolumeSourceEffect(PlayerPrefs.GetFloat("vEffect"));
     }
 

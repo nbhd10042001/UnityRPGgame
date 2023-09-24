@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.IO;
+using System;
 
 public class UIManager : MonoBehaviour
 {
@@ -18,16 +20,21 @@ public class UIManager : MonoBehaviour
     [SerializeField] private InputField m_fieldName;
     [SerializeField] private TextMeshProUGUI m_WarningNull;
 
-    private SaveLoadManager m_SLManager;
-    private VolumeManager m_VolumeManager;
+    [SerializeField] private SaveLoadManager m_SLManager;
+    [SerializeField] private VolumeManager m_VolumeManager;
     private string m_curName;
+    private PlayerCfg playerCfg;
 
     private void Start()
     {
-        m_SLManager = GetComponent<SaveLoadManager>();
-        m_VolumeManager = FindObjectOfType<VolumeManager>();
+        playerCfg = PlayerManager.Instance.LoadDataCurPlayer();
+        if (playerCfg != null)
+        {
+            m_nameChar.text = playerCfg.name;
+        }
         SetUI(UI.Menu);
     }
+
 
     private void SetUI(UI ui)
     {
@@ -62,9 +69,17 @@ public class UIManager : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(m_fieldName.text))
         {
+            if (!Directory.Exists(Application.dataPath + "/Resources/save"))
+            {
+                Directory.CreateDirectory(Application.dataPath + "/Resources/save");
+                Directory.CreateDirectory(Application.dataPath + "/Resources/save/curPlayer");
+                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot1");
+                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot2");
+                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot3");
+            }
+                
             m_curName = m_fieldName.text;
-            SetUI(UI.Save);
-            m_SLManager.SetUI_Save(true);
+            m_SLManager.CreateNewPlayer();
         }
         else
             StartCoroutine(NameCharNotFound(UI.Create));
@@ -73,7 +88,8 @@ public class UIManager : MonoBehaviour
 
     public void btnPlay_Pressed()
     {
-        if (!string.IsNullOrEmpty(m_nameChar.text))
+        
+        if (File.Exists(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg()))
             SceneManager.LoadScene("Home");
         else
             StartCoroutine(NameCharNotFound(UI.Menu));
@@ -95,7 +111,6 @@ public class UIManager : MonoBehaviour
     }
 
 
-
     public void btnCancel_Pressed()
     {
         SetUIMenu();
@@ -105,6 +120,12 @@ public class UIManager : MonoBehaviour
     {
         SetUI(UI.Load);
         m_SLManager.SetUI_Load(true);
+    }
+
+    public void btnSave_Pressed()
+    {
+        SetUI(UI.Save);
+        m_SLManager.SetUI_Save(true);
     }
 
     public void btnBack_Pressed()

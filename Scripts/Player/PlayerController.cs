@@ -1,12 +1,14 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 
 
 public class PlayerController : MonoBehaviour
 {
+    public Action<string> OnActiveEnemy;
+
     private static PlayerController m_Instance;
     public static PlayerController Instance
     {
@@ -18,12 +20,23 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public Action OnCDSkill_1;
+    public Action OnCDSkill_2;
+    public Action OnCDSkill_3;
+    public Action OnCDSkill_4;
+    public Action OnCDSkill_5;
+    public Action OnCDSkill_6;
+
     [SerializeField] private LayerMask m_NPCLayer;
+    [SerializeField] private LayerMask m_RegionEnemyLayer;
     [SerializeField] private Transform m_Foot;
+    [SerializeField] private Transform m_PointHome;
 
     private PlayerInput m_PlayerInput;
     private Vector2 m_MovementInput;
     private Animator m_Animator;
+    private PlayerStats m_PlayerStats;
+
 
     private Rigidbody2D m_rb2d;
     private bool m_IsMoving;
@@ -35,7 +48,19 @@ public class PlayerController : MonoBehaviour
 
     private float m_speed;
 
-    private PlayerStats m_PlayerStats;
+    public MagicCfg MagicBolt;
+    public MagicCfg MagicCharged;
+    public MagicCfg MagicCrossed;
+    public MagicCfg MagicPulse;
+    public MagicCfg MagicSpark;
+    public MagicCfg MagicWaveForm;
+
+    private bool skill_1 = true;
+    private bool skill_2 = true;
+    private bool skill_3 = true;
+    private bool skill_4 = true;
+    private bool skill_5 = true;
+    private bool skill_6 = true;
 
     private void Awake()
     {
@@ -65,12 +90,18 @@ public class PlayerController : MonoBehaviour
         m_PlayerInput.Player.Attack.performed += OnAttack;
         m_PlayerInput.Player.Attack.canceled += OnAttack;
 
+        m_PlayerInput.Player.Magic.started += OnMagic;
+        m_PlayerInput.Player.Magic.performed += OnMagic;
+        m_PlayerInput.Player.Magic.canceled += OnMagic;
+
         m_PlayerInput.Enable();
 
+        MovePlayerToOtherPoint(m_PointHome);
     }
 
     private void OnMovement (InputAction.CallbackContext context)
     {
+        
         if (context.started || context.performed)
             m_MovementInput = context.ReadValue<Vector2>();
         else
@@ -95,19 +126,27 @@ public class PlayerController : MonoBehaviour
         {
             m_IsAttackPress = false;
         }
-
     }
+
 
     private void OnDisable()
     {
         m_PlayerInput.Disable();
     }
 
-
+    private void Start()
+    {
+        //OnCDMagicBolt(cd_MagicBolt, MagicBolt.cd);
+    }
 
     private void Update()
     {
         m_speed = m_PlayerStats.Speed;
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            //
+        }
     }
 
     private void FixedUpdate()
@@ -125,6 +164,23 @@ public class PlayerController : MonoBehaviour
         //interactPos = transform.position;
         //CheckTourchNPC(interactPos);
         CheckTourchNPC(m_Foot.position);
+        CheckOnRegionEnemy();
+    }
+
+    private void CheckOnRegionEnemy()
+    {
+        var collider = Physics2D.OverlapCircle(transform.position, 0.00001f, m_RegionEnemyLayer);
+
+        if (collider != null)
+        {
+            string name = collider.GetComponent<AreaBattle>()?.GetNameArea();
+            OnActiveEnemy(name);
+        }
+        else
+        {
+            if (OnActiveEnemy != null)
+                OnActiveEnemy("");
+        }
     }
 
     private void CheckTourchNPC(Vector3 interactPos)
@@ -173,6 +229,11 @@ public class PlayerController : MonoBehaviour
         m_isHit = isHit;
     }
 
+    public void MovePlayerToOtherPoint(Transform trans)
+    {
+        gameObject.transform.position = trans.position;
+    }
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
@@ -183,4 +244,112 @@ public class PlayerController : MonoBehaviour
     {
         AudioManager.Instance.PlaySfxSlashSword();
     }
+
+    #region --------------------- Event click skill ------------------------
+    private void OnMagic(InputAction.CallbackContext context)
+    {
+        if (context.performed && context.control.name.ToString() == "1")
+        {
+            if (skill_1 && PlayerStats.Instance.Mana >= MagicBolt.consumable_mana
+                && PlayerStats.Instance.Level >= MagicBolt.requiredLevel)
+            {
+                skill_1 = false;
+                PlayerStats.Instance.Mana -= MagicBolt.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicBolt.nameSkill);
+                Invoke("ResetSkill_1", MagicBolt.cd);
+                OnCDSkill_1();
+            }
+        }
+        else if (context.performed && context.control.name.ToString() == "2")
+        {
+            if (skill_2 && PlayerStats.Instance.Mana >= MagicCharged.consumable_mana
+                && PlayerStats.Instance.Level >= MagicCharged.requiredLevel)
+            {
+                skill_2 = false;
+                PlayerStats.Instance.Mana -= MagicCharged.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicCharged.nameSkill);
+                Invoke("ResetSkill_2", MagicCharged.cd);
+                OnCDSkill_2();
+            }
+        }
+
+        else if (context.performed && context.control.name.ToString() == "3")
+        {
+            if (skill_3 && PlayerStats.Instance.Mana >= MagicCrossed.consumable_mana
+                && PlayerStats.Instance.Level >= MagicCrossed.requiredLevel)
+            {
+                skill_3 = false;
+                PlayerStats.Instance.Mana -= MagicCrossed.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicCrossed.nameSkill);
+                Invoke("ResetSkill_3", MagicCrossed.cd);
+                OnCDSkill_3();
+            }
+        }
+
+        else if (context.performed && context.control.name.ToString() == "4")
+        {
+            if (skill_4 && PlayerStats.Instance.Mana >= MagicPulse.consumable_mana
+                && PlayerStats.Instance.Level >= MagicPulse.requiredLevel)
+            {
+                skill_4 = false;
+                PlayerStats.Instance.Mana -= MagicPulse.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicPulse.nameSkill);
+                Invoke("ResetSkill_4", MagicPulse.cd);
+                OnCDSkill_4();
+            }
+        }
+
+        else if (context.performed && context.control.name.ToString() == "5")
+        {
+            if (skill_5 && PlayerStats.Instance.Mana >= MagicSpark.consumable_mana
+                && PlayerStats.Instance.Level >= MagicSpark.requiredLevel)
+            {
+                skill_5 = false;
+                PlayerStats.Instance.Mana -= MagicSpark.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicSpark.nameSkill);
+                Invoke("ResetSkill_5", MagicSpark.cd);
+                OnCDSkill_5();
+            }
+        }
+
+        else if (context.performed && context.control.name.ToString() == "6")
+        {
+            if (skill_6 && PlayerStats.Instance.Mana >= MagicWaveForm.consumable_mana
+                && PlayerStats.Instance.Level >= MagicWaveForm.requiredLevel)
+            {
+                skill_6 = false;
+                PlayerStats.Instance.Mana -= MagicWaveForm.consumable_mana;
+                SpawmManager.Instance.SpawmMagic(transform.position, MagicWaveForm.nameSkill);
+                Invoke("ResetSkill_6", MagicWaveForm.cd);
+                OnCDSkill_6();
+            }
+        }
+    }
+
+    private void ResetSkill_1()
+    {
+        skill_1 = true;
+    }
+    private void ResetSkill_2()
+    {
+        skill_2 = true;
+    }
+
+    private void ResetSkill_3()
+    {
+        skill_3 = true;
+    }
+    private void ResetSkill_4()
+    {
+        skill_4 = true;
+    }
+    private void ResetSkill_5()
+    {
+        skill_5 = true;
+    }
+    private void ResetSkill_6()
+    {
+        skill_6 = true;
+    }
+    #endregion
 }

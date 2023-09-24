@@ -39,18 +39,31 @@ public class AudioManager : MonoBehaviour
             PlayMenuMusic();
         else if (SceneManager.GetActiveScene().name == "Home")
             PlayHomeMusic();
-        else if (SceneManager.GetActiveScene().name == "Battle")
-            PlayBattleMusic();
+
     }
 
     public void SetVolumeSourceMusic(float value)
     {
-        m_Music.volume = value;
+        if (value == 0)
+            m_Music.mute = true;
+        else
+        {
+            m_Music.mute = false;
+            m_Music.volume = value;
+        }
+
     }
 
     public void SetVolumeSourceEffect(float value)
     {
-        m_SFX.volume = value;
+        if (value == 0)
+            m_SFX.mute = true;
+        else
+        {
+            m_SFX.mute = false;
+            m_SFX.volume = value;
+        }
+
     }
 
     public void PlayMenuMusic()

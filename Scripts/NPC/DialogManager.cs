@@ -35,7 +35,12 @@ public class DialogManager : MonoBehaviour
                 GamePlayManager.Instance.ShowDialogUI(false);
 
                 if (nameNpc == "Travel")
-                    GamePlayManager.Instance.ShowBtnBattle(true);
+                    GamePlayManager.Instance.ShowUINpc(true, nameNpc);
+                else if (nameNpc == "ModeSurvival")
+                    GamePlayManager.Instance.ShowUINpc(true, nameNpc);
+
+                else if (nameNpc == "Mission")
+                    GamePlayManager.Instance.OpenMissionUI();
 
                 StartCoroutine(WaitOneSec());
             }

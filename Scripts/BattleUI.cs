@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class BattleUI : MonoBehaviour
 {
+    public Action OnClickInfoSkill;
+
     [SerializeField] private TextMeshProUGUI m_TxtHP;
     [SerializeField] private TextMeshProUGUI m_TxtMana;
     [SerializeField] private TextMeshProUGUI m_TxtExp;
@@ -13,53 +16,49 @@ public class BattleUI : MonoBehaviour
     [SerializeField] private Image m_ImgManaBar;
     [SerializeField] private Image m_ImgExpBar;
     [SerializeField] private TextMeshProUGUI m_TxtLevel;
+    [SerializeField] private TextMeshProUGUI m_TxtCoin;
+
 
     private PlayerStats playerStats;
 
     private void OnEnable()
     {
         playerStats = PlayerStats.Instance;
-
         if (playerStats != null)
         {
-            playerStats.OnCurHpChange += oonCurHpChanged;
-            playerStats.OnCurManaChange += oonCurManaChanged;
-            playerStats.OnCurExpChange += oonCurExpChanged;
-            playerStats.OnCurLevelChange += oonCurLevelChanged;
+            playerStats.OnCurHpChange += onCurHpChanged;
+            playerStats.OnCurManaChange += onCurManaChanged;
+            playerStats.OnCurExpChange += onCurExpChanged;
+            playerStats.OnCurLevelChange += onCurLevelChanged;
+            playerStats.OnCurCoinChange += onCurCoinChanged;
         }
     }
 
-    private void OnDisable()
-    {
-        if (playerStats != null)
-        {
-            playerStats.OnCurHpChange -= oonCurHpChanged;
-            playerStats.OnCurManaChange -= oonCurManaChanged;
-            playerStats.OnCurExpChange -= oonCurExpChanged;
-            playerStats.OnCurLevelChange -= oonCurLevelChanged;
-        }
-    }
-
-    private void oonCurHpChanged(int curHp, int maxHp)
+    private void onCurHpChanged(int curHp, int maxHp)
     {
         m_TxtHP.text = $"{curHp}/{maxHp}";
         m_ImgHpBar.fillAmount = curHp * 1f / maxHp;
     }
 
-    private void oonCurManaChanged(int curMana, int maxMana)
+    private void onCurManaChanged(int curMana, int maxMana)
     {
         m_TxtMana.text = $"{curMana}/{maxMana}";
         m_ImgManaBar.fillAmount = curMana * 1f / maxMana;
     }
 
-    private void oonCurExpChanged(float curExp, float maxExp)
+    private void onCurExpChanged(int curExp, int maxExp)
     {
         m_TxtExp.text = $"{curExp}/{maxExp}";
         m_ImgExpBar.fillAmount = curExp * 1f / maxExp;
     }
 
-    private void oonCurLevelChanged(int curLevel)
+    private void onCurLevelChanged(int curLevel)
     {
         m_TxtLevel.text = $"{curLevel}";
+    }
+
+    private void onCurCoinChanged(int curCoin)
+    {
+        m_TxtCoin.text = $"{curCoin}";
     }
 }

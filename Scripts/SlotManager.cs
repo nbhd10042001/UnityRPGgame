@@ -11,16 +11,16 @@ public class SlotManager : MonoBehaviour
     [SerializeField] private string m_slot;
 
 
-    private PlayerData playerData;
-
     private void Update()
     {
-        if (File.Exists(Application.dataPath + $"/save/{m_slot}/saveFile.json"))
+        if (File.Exists(pathSave.Instance.GetPathSave_slot_PlayerCfg(m_slot)))
         {
-            string json = File.ReadAllText(Application.dataPath + $"/save/{m_slot}/saveFile.json");
-            playerData = JsonUtility.FromJson<PlayerData>(json);
-            m_name.text = playerData.name;
-            m_day.text = playerData.m_dayCreate;
+            string json = File.ReadAllText(pathSave.Instance.GetPathSave_slot_PlayerCfg(m_slot));
+            PlayerCfg playerCfg = new PlayerCfg();
+            playerCfg = JsonUtility.FromJson<PlayerCfg>(json);
+
+            m_name.text = playerCfg.name;
+            m_day.text = playerCfg.dayCreate;
         }
         else
         {

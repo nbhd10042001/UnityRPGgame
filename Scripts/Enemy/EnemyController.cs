@@ -11,41 +11,58 @@ public class EnemyController : MonoBehaviour
         Run,
         Hit,
         Fly,
+        Attack,
         Deappear,
         Appear
     }
 
     [SerializeField] private Animator m_Animator;
-    [SerializeField] private Transform parentTran;
+    [SerializeField] private Transform parentTrans;
     [SerializeField] private float m_scale = 2;
+    public EnemyCfg m_EnemyCfg;
+
 
     private Rigidbody2D m_rgb2d;
     private State m_curState;
     private int m_DirectionX = 1;
     private Vector2 m_startPos;
 
-    private float ranMv_x;
-    private float ranMv_y;
+    private int ranMv_x;
+    private int ranMv_y;
     private Vector2 posMv;
+    private float timeWaitToIdle;
+    private string nameEnemy;
+    private int speed;
+    private float delayAtk;
 
     private GameObject m_player;
-    private EnemyStats m_EnemyStats;
     private EnemyHandleCollider m_EnmHandleColli;
-
+    
 
     private void Awake()
     {
         m_player = GameObject.FindGameObjectWithTag("Player");
-        m_EnemyStats = GetComponent<EnemyStats>();
         m_EnmHandleColli = GetComponent<EnemyHandleCollider>();
         m_rgb2d = GetComponent<Rigidbody2D>();
+        speed = m_EnemyCfg.speed;
     }
 
-    private void Start()
+    private void OnEnable()
+    {
+        PlayerController.Instance.OnActiveEnemy += onActiveEnemy;
+    }
+
+    public void SetStart()
     {
         m_startPos = new Vector2(transform.position.x, transform.position.y);
-
         StartCoroutine(UpdateAI());
+    }
+
+    private void OnDisable()
+    {
+        if (PlayerController.Instance != null)
+            PlayerController.Instance.OnActiveEnemy -= onActiveEnemy;
+        StopAllCoroutines();
     }
 
     private void Update()
@@ -54,46 +71,41 @@ public class EnemyController : MonoBehaviour
             m_player = GameObject.FindGameObjectWithTag("Player");
     }
 
+    public void onActiveEnemy(string name)
+    {
+        nameEnemy = name;
+    }
+
+
+    public void ReleaseEnemy()
+    {
+        SpawmManager.Instance.ReleaseEnemy(this, m_EnemyCfg.name);
+    }
+
     private IEnumerator UpdateAI()
     {
         while (true)
         {
-            if (m_EnmHandleColli.GetIsDetectPlayer())
+            delayAtk += Time.deltaTime;
+            if (nameEnemy == m_EnemyCfg.name)
             {
-
                 if (m_curState == State.Idle)
                 {
                     yield return new WaitForSeconds(0.5f);
                     m_rgb2d.velocity = new Vector2(0, m_rgb2d.velocity.y);//reset velocity
-
                     SetStateEnemy(State.Walk);
-
                 }
 
                 else if (m_curState == State.Walk)
                 {
                     m_rgb2d.velocity = new Vector2(0, 0);//reset velocity
-
-                    transform.position = Vector3.MoveTowards(transform.position, m_player.transform.position, m_EnemyStats.Speed * Time.deltaTime);
-
-                    if (transform.position.x <= m_player.transform.position.x)
-                        SetDirectionX(-1);
-                    else
-                        SetDirectionX(1);
-                }
-
-                else if (m_curState == State.Run)
-                {
-                    m_rgb2d.velocity = new Vector2(0, 0);//reset velocity
-
-                    transform.position = Vector3.MoveTowards(transform.position, m_player.transform.position, m_EnemyStats.Speed * 2 * Time.deltaTime);
+                    transform.position = Vector3.MoveTowards(transform.position, m_player.transform.position, speed * Time.deltaTime);
 
                     if (transform.position.x <= m_player.transform.position.x)
                         SetDirectionX(-1);
                     else
                         SetDirectionX(1);
                 }
-
 
                 else if (m_curState == State.Hit)
                 {
@@ -102,12 +114,18 @@ public class EnemyController : MonoBehaviour
 
                     yield return new WaitForSeconds(0.5f);
                     m_rgb2d.velocity = new Vector2(0, 0); //reset velocity
-                    m_EnmHandleColli.SetGetHit(false);
 
-                    SetStateEnemy(State.Walk);
+                    SetStateEnemy(State.Idle);
+                }
+
+                else if (m_curState == State.Attack)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    SetStateEnemy(State.Idle);
                 }
             }
-            else
+
+            else //when enemy not found player stay on Area Enemy
             {
                 if (m_curState != State.Walk)
                 {
@@ -126,10 +144,19 @@ public class EnemyController : MonoBehaviour
 
                 else if (m_curState == State.Walk)
                 {
-                    transform.position = Vector3.MoveTowards(transform.position, posMv, m_EnemyStats.Speed * Time.deltaTime);
+                    timeWaitToIdle += Time.deltaTime;
+                    transform.position = Vector2.MoveTowards(transform.position, posMv, speed * Time.deltaTime);
 
                     if (transform.position.x == posMv.x && transform.position.y == posMv.y)
+                    {
+                        timeWaitToIdle = 0;
                         SetStateEnemy(State.Idle);
+                    }
+                    else if (timeWaitToIdle > 3)
+                    {
+                        timeWaitToIdle = 0;
+                        SetStateEnemy(State.Idle);
+                    }
                 }
 
             }
@@ -138,6 +165,24 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    public void SetStateHit()
+    {
+        SetStateEnemy(State.Hit);
+    }
+
+    public void SetStateAttack()
+    {
+        if (delayAtk > 2)
+        {
+            SetStateEnemy(State.Attack);
+            delayAtk = 0;
+        }
+    }
+
+    public bool GetisDetectPlayer()
+    {
+        return nameEnemy == m_EnemyCfg.name;
+    }
 
     private void SetDirectionX(int directionx)
     {
@@ -145,20 +190,11 @@ public class EnemyController : MonoBehaviour
         transform.localScale = new Vector3(-m_DirectionX * m_scale, m_scale, 1);
     }
 
-    public void SetStateHit()
-    {
-        SetStateEnemy(State.Hit);
-    }
-
-    public void SetStateIdle()
-    {
-        SetStateEnemy(State.Idle);
-    }
-
     private void SetStateEnemy(State state)
     {
         m_curState = state;
-        switch (state)
+
+        switch (m_curState)
         {
             case State.Idle:
                 PlayIdleAnimation();
@@ -175,23 +211,26 @@ public class EnemyController : MonoBehaviour
             case State.Fly:
                 PlayFlyAnimation();
                 break;
+            case State.Attack:
+                PlayAttackAnimation();
+                break;
         }
     }
 
     //----------Gizmos and Animation-----------------
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Vector3 posFrom = new Vector3(parentTran.position.x + 2, parentTran.position.y);
-        Vector3 posTo = new Vector3(parentTran.position.x - 2, parentTran.position.y);
-        Gizmos.DrawLine(posFrom, posTo);
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.red;
+    //    Vector3 posFrom = new Vector3(parentTrans.position.x + 2, parentTrans.position.y);
+    //    Vector3 posTo = new Vector3(parentTrans.position.x - 2, parentTrans.position.y);
+    //    Gizmos.DrawLine(posFrom, posTo);
 
-        posFrom = new Vector3(parentTran.position.x, parentTran.position.y + 2);
-        posTo = new Vector3(parentTran.position.x, parentTran.position.y - 2);
-        Gizmos.DrawLine(posFrom, posTo);
+    //    posFrom = new Vector3(parentTrans.position.x, parentTrans.position.y + 2);
+    //    posTo = new Vector3(parentTrans.position.x, parentTrans.position.y - 2);
+    //    Gizmos.DrawLine(posFrom, posTo);
 
-    }
+    //}
 
     [ContextMenu("Play Idle Animation")]
     private void PlayIdleAnimation()
@@ -226,6 +265,13 @@ public class EnemyController : MonoBehaviour
     {
         m_Animator.SetTrigger("Change");
         m_Animator.SetInteger("State", 5);
+    }
+
+    [ContextMenu("Play Attack Animation")]
+    private void PlayAttackAnimation()
+    {
+        m_Animator.SetTrigger("Change");
+        m_Animator.SetInteger("State", 6);
     }
 
     [ContextMenu("Play Deappear Animation")]

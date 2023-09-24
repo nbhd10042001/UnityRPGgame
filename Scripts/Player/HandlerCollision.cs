@@ -49,6 +49,12 @@ public class HandlerCollision : MonoBehaviour
             yield return null;
         }
         spt.color = Color.white;
+        
+    }
+
+    public void StartCoroutineGetHitFX()
+    {
+        StartCoroutine(GetHitFX());
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -56,20 +62,22 @@ public class HandlerCollision : MonoBehaviour
         if (m_GetHit)
             return;
 
-        if (collision.CompareTag("Enemy"))
+        if (collision.CompareTag("Enemy") || collision.CompareTag("AtkEnemy"))
         {
             m_GetHit = true;
             m_PlayerCtrl.GetHit(m_GetHit);
 
             m_GetHitTime = 0.5f;
-            m_PlayerStats.GetHit(1);
+            if (collision.CompareTag("AtkEnemy"))
+                m_PlayerStats.GetHit(collision.gameObject.GetComponentInParent<EnemyController>().m_EnemyCfg.damage);
+            else
+                m_PlayerStats.GetHit(collision.gameObject.GetComponent<EnemyController>().m_EnemyCfg.damage);
 
             Vector2 knockbackDirection = transform.position - collision.transform.position;
             knockbackDirection = knockbackDirection.normalized;
             m_Rigidbody2D.AddForce(knockbackDirection * 5, ForceMode2D.Impulse);
-
-            StartCoroutine(GetHitFX());
         }
+
 
     }
 }

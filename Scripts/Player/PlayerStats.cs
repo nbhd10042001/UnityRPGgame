@@ -4,14 +4,18 @@ using UnityEngine;
 using System.IO;
 using System;
 using UnityEngine.SceneManagement;
+using TMPro;
+
 
 
 public class PlayerStats : MonoBehaviour
 {
     public Action <int, int> OnCurHpChange;
     public Action <int, int> OnCurManaChange;
-    public Action <float, float> OnCurExpChange;
+    public Action <int, int> OnCurExpChange;
     public Action <int> OnCurLevelChange;
+    public Action <int> OnCurCoinChange;
+    public Action OnQuantyQuesChange;
 
     private static PlayerStats m_Instance;
     public static PlayerStats Instance
@@ -24,77 +28,135 @@ public class PlayerStats : MonoBehaviour
         }
     }
 
+    public PlayerCfg playerCfg;
+    public PlayerInventory playerInventory;
+    private HandlerCollision HandlerColli;
+    private float timeReMana;
+
     private void Awake()
     {
         if (m_Instance == null)
             m_Instance = this;
         else if (m_Instance != this)
             Destroy(gameObject);
+
+        playerCfg = PlayerManager.Instance.LoadDataCurPlayer();
+        playerInventory = PlayerManager.Instance.LoadInventoryCurPlayer();
+        HandlerColli = GetComponent<HandlerCollision>();
     }
-
-
-    private PlayerData playerData;
 
     private void Start()
     {
-        playerData = SavePlayer.Instance.LoadDataPlayer();
-        OnCurHpChange(playerData.m_curHp, playerData.m_maxHp);
-        OnCurManaChange(playerData.m_curMana, playerData.m_maxMana);
-        OnCurExpChange(playerData.m_curExp, playerData.m_maxExp);
-        OnCurLevelChange(playerData.m_curLevel);
+        OnCurHpChange(playerCfg.curHp, playerCfg.maxHp);
+        OnCurManaChange(playerCfg.curMana, playerCfg.maxMana);
+        OnCurExpChange(playerCfg.curExp, playerCfg.maxExp);
+        OnCurLevelChange(playerCfg.level);
+        OnCurCoinChange(playerCfg.coin);
+        Vector3 posPlayer = PlayerStats.Instance.transform.position;
+        Vector3 pos = new Vector3(posPlayer.x, posPlayer.y - 1, 0);
     }
 
-
-    public void GetHit(int damage)
+    private void Update()
     {
-        playerData.m_curHp -= damage;
-        OnCurHpChange(playerData.m_curHp, playerData.m_maxHp);
-
-        if (playerData.m_curHp <= 0)
+        timeReMana += Time.deltaTime * playerCfg.speed_regenMana; 
+        if (timeReMana >= 1)
         {
-            Destroy(gameObject);
+            Mana += 1;
+            if (Mana > playerCfg.maxMana)
+                Mana -= 1;
+            timeReMana = 0f;
         }
     }
 
-    public void SaveData()
+    public void GetExp(int exp)
     {
-        playerData.m_dayCreate = DateTime.Now.ToString();
-        SavePlayer.Instance.SaveDataPlayer(playerData);
+        Exp += exp;
+        while (Exp > playerCfg.maxExp)
+        {
+            int redundant_exp = Exp - playerCfg.maxExp;
+            playerInventory.LevelUp();
+            playerCfg.LevelUp();
+            Hp = playerCfg.maxHp;
+            Mana = playerCfg.maxMana;
+            
+            Exp = redundant_exp;
+            Level += 1;
+        }
     }
 
+    public void GetHit(int damage)
+    {
+        Hp -= (damage - playerCfg.defend);
+        HandlerColli.StartCoroutineGetHitFX();
+
+        if (Hp <= 0)
+        {
+            GamePlayManager.Instance.StartCoroutinTextPlayerDead();
+            Invoke("SetActivePlayer", 5);
+            gameObject.SetActive(false);
+        }
+    }
+
+    private void SetActivePlayer()
+    {
+        gameObject.SetActive(true);
+        Hp = playerCfg.maxHp;
+    }
+
+    public void saveData ()
+    {
+        string json = JsonUtility.ToJson(playerCfg);
+        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg(), json);
+
+        json = JsonUtility.ToJson(playerInventory);
+        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_Inventory(), json);
+    }
+
+    private void OnApplicationQuit()
+    {
+        saveData();
+    }
+
+    //-------Stat Current Player------------------
     public int Hp
     {
-        get { return playerData.m_curHp; }
-        set { playerData.m_curHp = value; }
+        get { return playerCfg.curHp; }
+        set { playerCfg.curHp = value; OnCurHpChange(playerCfg.curHp, playerCfg.maxHp); }
     }
 
     public int Mana
     {
-        get { return playerData.m_curMana; }
-        set { playerData.m_curMana = value; }
+        get { return playerCfg.curMana; }
+        set { playerCfg.curMana = value; OnCurManaChange(playerCfg.curMana, playerCfg.maxMana); }
     }
 
-    public float Exp
+    public int Exp
     {
-        get { return playerData.m_curExp; }
-        set { playerData.m_curExp = value; OnCurExpChange(playerData.m_curExp, playerData.m_maxExp); }
+        get { return playerCfg.curExp; }
+        set { playerCfg.curExp = value; OnCurExpChange(playerCfg.curExp, playerCfg.maxExp); }
     }
 
     public float SpeedAtk
     {
-        get { return playerData.m_curSpeedAtk; }
-        set { playerData.m_curSpeedAtk = value; }
+        get { return playerCfg.curSpeedAtk; }
+        set { playerCfg.curSpeedAtk = value; }
     }
 
-    public int Speed
+    public float Speed
     {
-        get { return playerData.m_curSpeed; }
-        set { playerData.m_curSpeed = value; }
+        get { return playerCfg.curSpeed; }
+        set { playerCfg.curSpeed = value; }
     }
 
     public int Level
     {
-        get { return playerData.m_curLevel; }
-        set { playerData.m_curLevel = value; }
+        get { return playerCfg.level; }
+        set { playerCfg.level = value; OnCurLevelChange(playerCfg.level); }
+    }
+
+    public int Coin
+    {
+        get { return playerCfg.coin; }
+        set { playerCfg.coin = value; OnCurCoinChange(playerCfg.coin); }
     }
 }
