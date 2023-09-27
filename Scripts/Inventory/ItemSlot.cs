@@ -40,7 +40,7 @@ public class ItemSlot : MonoBehaviour
         {
             GamePlayManager.Instance.SetItemSlot_Pressed(item);
             GamePlayManager.Instance.onActiveFalsePaddingSlot.Invoke();
-            GamePlayManager.Instance.ShowInfoMaterialTab(item.name, item.isEquipment);
+            GamePlayManager.Instance.ShowInfoMaterialTab(item);
 
             m_padding.SetActive(true);
         } 

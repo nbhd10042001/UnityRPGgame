@@ -3,19 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
-using UnityEngine.SceneManagement;
 using TMPro;
-
-
 
 public class PlayerStats : MonoBehaviour
 {
     public Action <int, int> OnCurHpChange;
-    public Action <int, int> OnCurManaChange;
+    public Action <float, float> OnCurManaChange;
     public Action <int, int> OnCurExpChange;
-    public Action <int> OnCurLevelChange;
     public Action <int> OnCurCoinChange;
-    public Action OnQuantyQuesChange;
+    public Action<int> OnCurLevelChange;
+
+    public delegate void OnQuantyQuesChange();
+    public OnQuantyQuesChange onQuantyQuesChange = delegate { };
+
+    public delegate void OnLevelUp();
+    public OnLevelUp onLevelUp = delegate { };
 
     private static PlayerStats m_Instance;
     public static PlayerStats Instance
@@ -28,10 +30,14 @@ public class PlayerStats : MonoBehaviour
         }
     }
 
+    [SerializeField] private TextMeshProUGUI m_txtNamePlayer;
     public PlayerCfg playerCfg;
     public PlayerInventory playerInventory;
     private HandlerCollision HandlerColli;
     private float timeReMana;
+    private int damInc_temp;
+    private int defInc_temp;
+    private float speedRM_temp;
 
     private void Awake()
     {
@@ -39,10 +45,11 @@ public class PlayerStats : MonoBehaviour
             m_Instance = this;
         else if (m_Instance != this)
             Destroy(gameObject);
-
+        HandlerColli = GetComponent<HandlerCollision>();
         playerCfg = PlayerManager.Instance.LoadDataCurPlayer();
         playerInventory = PlayerManager.Instance.LoadInventoryCurPlayer();
-        HandlerColli = GetComponent<HandlerCollision>();
+
+        m_txtNamePlayer.text = playerCfg.name;
     }
 
     private void Start()
@@ -52,20 +59,26 @@ public class PlayerStats : MonoBehaviour
         OnCurExpChange(playerCfg.curExp, playerCfg.maxExp);
         OnCurLevelChange(playerCfg.level);
         OnCurCoinChange(playerCfg.coin);
-        Vector3 posPlayer = PlayerStats.Instance.transform.position;
-        Vector3 pos = new Vector3(posPlayer.x, posPlayer.y - 1, 0);
     }
 
     private void Update()
     {
-        timeReMana += Time.deltaTime * playerCfg.speed_regenMana; 
+        timeReMana += Time.deltaTime;
         if (timeReMana >= 1)
         {
-            Mana += 1;
+            Mana += playerCfg.speed_regenMana;
             if (Mana > playerCfg.maxMana)
-                Mana -= 1;
-            timeReMana = 0f;
+                Mana = playerCfg.maxMana;
+            timeReMana = 0;
         }
+    }
+    public void saveData()
+    {
+        string json = JsonUtility.ToJson(playerCfg);
+        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg(), json);
+
+        json = JsonUtility.ToJson(playerInventory);
+        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_Inventory(), json);
     }
 
     public void GetExp(int exp)
@@ -81,6 +94,7 @@ public class PlayerStats : MonoBehaviour
             
             Exp = redundant_exp;
             Level += 1;
+            onLevelUp.Invoke();
         }
     }
 
@@ -100,31 +114,57 @@ public class PlayerStats : MonoBehaviour
     private void SetActivePlayer()
     {
         gameObject.SetActive(true);
-        Hp = playerCfg.maxHp;
-    }
-
-    public void saveData ()
-    {
-        string json = JsonUtility.ToJson(playerCfg);
-        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg(), json);
-
-        json = JsonUtility.ToJson(playerInventory);
-        File.WriteAllText(pathSave.Instance.GetPathSave_curPlayer_Inventory(), json);
+        Hp = (int)(playerCfg.maxHp / 2);
     }
 
     private void OnApplicationQuit()
     {
-        saveData();
+        IncreaseDamage(-damInc_temp);
+        IncreaseDefend(-defInc_temp);
+        IncreaseSpeedRegenMana(-speedRM_temp);
+    }
+
+    public void IncreaseDamage(int damage)
+    {
+        if (damage > 0)
+            damInc_temp = damage;
+        else if (damage < 0)
+            damInc_temp = 0;
+        playerCfg.damage += damage;
+    }
+
+    public void IncreaseDefend(int defend)
+    {
+        if (defend > 0)
+            defInc_temp = defend;
+        else if (defend < 0)
+            defInc_temp = 0;
+        playerCfg.defend += defend;
+    }
+
+    public void IncreaseSpeedRegenMana(float speedRegen)
+    {
+        if (speedRegen > 0)
+            speedRM_temp = speedRegen;
+        else if (speedRegen < 0)
+            speedRM_temp = 0;
+        playerCfg.speed_regenMana += speedRegen;
     }
 
     //-------Stat Current Player------------------
     public int Hp
     {
         get { return playerCfg.curHp; }
-        set { playerCfg.curHp = value; OnCurHpChange(playerCfg.curHp, playerCfg.maxHp); }
+        set 
+        { 
+            playerCfg.curHp = value; 
+            if (playerCfg.curHp > playerCfg.maxHp)
+                playerCfg.curHp = playerCfg.maxHp;
+            OnCurHpChange(playerCfg.curHp, playerCfg.maxHp);
+        }
     }
 
-    public int Mana
+    public float Mana
     {
         get { return playerCfg.curMana; }
         set { playerCfg.curMana = value; OnCurManaChange(playerCfg.curMana, playerCfg.maxMana); }
@@ -159,4 +199,5 @@ public class PlayerStats : MonoBehaviour
         get { return playerCfg.coin; }
         set { playerCfg.coin = value; OnCurCoinChange(playerCfg.coin); }
     }
+
 }

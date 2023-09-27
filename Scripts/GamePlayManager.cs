@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.IO;
+using System;
 using TMPro;
 using UnityEngine.UI;
 
@@ -24,6 +24,7 @@ public class GamePlayManager : MonoBehaviour
 
     public delegate void OnActiveFalsePaddingSlot();
     public OnActiveFalsePaddingSlot onActiveFalsePaddingSlot = delegate { };
+    public Action OnItemEquipmentChange;
 
     [SerializeField] private GameObject m_DialogPng;
     [SerializeField] private GameObject m_UIselectNPC;
@@ -34,11 +35,16 @@ public class GamePlayManager : MonoBehaviour
     [SerializeField] private GameObject m_InventoryUI;
     [SerializeField] private GameObject m_MissionUI;
     [SerializeField] private GameObject m_BodyEquipUI;
+    [SerializeField] private GameObject m_ShopUI;
+    [SerializeField] private GameObject m_UpgradeUI;
 
     [SerializeField] private GameObject m_InfoMaterialTab;
     [SerializeField] private TextMeshProUGUI m_txtInfoMaterial;
     [SerializeField] private InputField m_inputDrop;
+    [SerializeField] private InputField m_inputSell;
+    [SerializeField] private Image m_btnSell;
     [SerializeField] private Image m_btnEquipment;
+    [SerializeField] private Image m_btnMobileInteract;
 
 
     [SerializeField] private Transform m_PointToGoDarkSky;
@@ -68,7 +74,6 @@ public class GamePlayManager : MonoBehaviour
             m_Instance = this;
         else if (m_Instance != this)
             Destroy(gameObject);
-
     }
 
     private void Start()
@@ -81,6 +86,15 @@ public class GamePlayManager : MonoBehaviour
         m_nameP.text = playerCfg.name;
     }
 
+    private void Update()
+    {
+        if (m_ShopUI.gameObject.activeSelf == true)
+            m_btnSell.color = Color.white;
+        else
+            m_btnSell.color = Color.gray;
+
+    }
+
     private void SetState (State state)
     {
         m_curState = state;
@@ -90,6 +104,7 @@ public class GamePlayManager : MonoBehaviour
         m_SettingUI.SetActive(m_curState == State.Setting);
     }
 
+    #region ------------------ show text/dialog/warning -----------------
     public void ShowDialogUI(bool isShow)
     {
         if (isShow)
@@ -118,38 +133,6 @@ public class GamePlayManager : MonoBehaviour
             m_UIselectNPC.SetActive(false);
             Time.timeScale = 1;
         }
-    }
-
-    public void BtnTravel_Pressed()
-    {
-        if (nameNpc == "Travel")
-        {
-            if (PlayerStats.Instance.Level >= 5)
-            {
-                Time.timeScale = 1;
-                m_UIselectNPC.SetActive(false);
-                PlayerController.Instance.MovePlayerToOtherPoint(m_PointToGoDarkSky);
-            }
-            else
-                SetTextWarning("Your level need over 5 to travel to DarkSky!");
-        }
-
-        else if (nameNpc == "ModeSurvival")
-        {
-            if (PlayerStats.Instance.Level >= 8)
-            {
-                Time.timeScale = 1;
-                m_UIselectNPC.SetActive(false);
-                PlayerController.Instance.MovePlayerToOtherPoint(m_PointToGoSurvival);
-            }
-            else
-                SetTextWarning("Your level need over 8 to travel to Survival!");
-        }
-    }
-
-    public void Btnleave_Pressed()
-    {
-        ShowUINpc(false, null);
     }
 
     private IEnumerator TextPlayerDead()
@@ -184,12 +167,31 @@ public class GamePlayManager : MonoBehaviour
     {
         m_TxtWarning.gameObject.SetActive(false);
     }
+    #endregion
 
-    #region -----body equipment----------
+    // function update ------------
+    private void UpdateInventoryPlayer(string name, int amount)
+    {
+        PlayerStats.Instance.playerInventory.AddItem(name, amount);
+        PlayerStats.Instance.playerInventory.UpdateCurCapacity();
+        Inventory.Instance.UpdateList();
+    }
+
+    private void UpdateItemEquipment()
+    {
+        PlayerStats.Instance.playerCfg.UpdateItemEquipment();
+        BodyEquipmentUI.Instance.UpdateItemEquip();
+        OnItemEquipmentChange();
+    }
+
+
+    #region ------------------- body equipment----------------------
     public void BtnOpenBodyEquip()
     {
         m_BodyEquipUI.SetActive(true);
         BtnCloseQuestionUI();
+        btnCloseUpgradeUI();
+        btnCloseShop_Pressed();
     }
 
     public void BtnCloseBodyEquip()
@@ -201,23 +203,49 @@ public class GamePlayManager : MonoBehaviour
     {
         if (itemChoose != null && itemChoose.isEquipment)
         {
-            if (itemChoose.slot == 1)
-                PlayerStats.Instance.playerCfg.slotEquipment_1 = itemChoose.name;
-            else if (itemChoose.slot == 2)
-                PlayerStats.Instance.playerCfg.slotEquipment_2 = itemChoose.name;
-            else if (itemChoose.slot == 3)
-                PlayerStats.Instance.playerCfg.slotEquipment_3 = itemChoose.name;
-            else if (itemChoose.slot == 4)
-                PlayerStats.Instance.playerCfg.slotEquipment_4 = itemChoose.name;
+            if (PlayerStats.Instance.Level >= itemChoose.requiredLevel)
+            {
+                if (itemChoose.slot == 1)
+                {
+                    if (PlayerStats.Instance.playerCfg.slotEquipment_1 != null)
+                        UpdateInventoryPlayer(PlayerStats.Instance.playerCfg.slotEquipment_1, 1);
+                    PlayerStats.Instance.playerCfg.slotEquipment_1 = itemChoose.name;
+                }
+                else if (itemChoose.slot == 2)
+                {
+                    if (PlayerStats.Instance.playerCfg.slotEquipment_2 != null)
+                        UpdateInventoryPlayer(PlayerStats.Instance.playerCfg.slotEquipment_2, 1);
+                    PlayerStats.Instance.playerCfg.slotEquipment_2 = itemChoose.name;
+                }
 
-            PlayerStats.Instance.playerCfg.UpdateItemEquipment();
-            BodyEquipmentUI.Instance.UpdateItemEquip();
+                UpdateInventoryPlayer(itemChoose.name, -1);
+                UpdateItemEquipment();
+            }
+            else
+            {
+                string text = "Your level not enough to equipment!";
+                SetTextWarning(text);
+            }
         }
+    }
+
+    public void btnReEquipmentItem_1_Pressed()
+    {
+        UpdateInventoryPlayer(PlayerStats.Instance.playerCfg.slotEquipment_1, 1);
+        PlayerStats.Instance.playerCfg.slotEquipment_1 = null;
+        UpdateItemEquipment();
+    }
+
+    public void btnReEquipmentItem_2_Pressed()
+    {
+        UpdateInventoryPlayer(PlayerStats.Instance.playerCfg.slotEquipment_2, 1);
+        PlayerStats.Instance.playerCfg.slotEquipment_2 = null;
+        UpdateItemEquipment();
     }
 
     #endregion
 
-    #region UI Inventory
+    #region-------------------- UI Inventory----------------------------
     public void BtnOpenInventoryUI()
     {
         m_InventoryUI.SetActive(true);
@@ -229,14 +257,24 @@ public class GamePlayManager : MonoBehaviour
         BtnCloseInfoMaterialTab();
     }
 
-    public void ShowInfoMaterialTab(string name, bool isEquipment)
+    public void ShowInfoMaterialTab(Item item)
     {
         m_InfoMaterialTab.SetActive(true);
-        m_txtInfoMaterial.text = $"Name: {name}";
-        if (isEquipment)
+        if (item.isEquipment)
+        {
             m_btnEquipment.color = Color.white;
+            m_txtInfoMaterial.text = $"Name: {item.name}\n" +
+                $"Price: {item.price}\n" +
+                $"Damage: {item.damage}\n" +
+                $"Defend: {item.defend}\n" +
+                $"Required Level: {item.requiredLevel}";
+        }
         else
+        {
             m_btnEquipment.color = Color.gray;
+            m_txtInfoMaterial.text = $"Name: {item.name}\n" +
+                $"Price: {item.price}";
+        }
 
     }
 
@@ -262,33 +300,34 @@ public class GamePlayManager : MonoBehaviour
                 if (amountItemDrop >= PlayerStats.Instance.playerInventory.GetAmountItem(itemChoose.name))
                 {
                     amountItemDrop = PlayerStats.Instance.playerInventory.GetAmountItem(itemChoose.name);
-                    PlayerStats.Instance.playerCfg.ResetSlot(itemChoose.slot);
-                    PlayerStats.Instance.playerCfg.UpdateItemEquipment();
-                    BodyEquipmentUI.Instance.UpdateItemEquip();
-
                     BtnCloseInfoMaterialTab();
                 }
 
+                // spawm = amount drop
                 if (!itemChoose.isEquipment)
                     for (int i = 0; i < amountItemDrop; i++)
                         SpawmManager.Instance.SpawmOre(PlayerController.Instance.transform.position, itemChoose.name, false);
                 else if (itemChoose.isEquipment)
+                    if (itemChoose.slot == 1)
+                        for (int i = 0; i < amountItemDrop; i++)
+                            SpawmManager.Instance.SpawmSword(PlayerController.Instance.transform.position, itemChoose.name);
+                if (itemChoose.slot == 2)
                     for (int i = 0; i < amountItemDrop; i++)
-                        SpawmManager.Instance.SpawmSword(PlayerController.Instance.transform.position, itemChoose.name);
+                        SpawmManager.Instance.SpawmShield(PlayerController.Instance.transform.position, itemChoose.name);
 
-                PlayerStats.Instance.playerInventory.AddItem(itemChoose.name, -amountItemDrop);
-                PlayerStats.Instance.playerInventory.UpdateCurCapacity();
-                Inventory.Instance.UpdateList();
+                UpdateInventoryPlayer(itemChoose.name, -amountItemDrop);
             }
         }
     }
     #endregion
 
-    #region Mission/Question
+    #region -------------------Mission/Question-----------------------
     public void BtnOpenQuestionUI()
     {
         m_QuestionUI.SetActive(true);
         BtnCloseBodyEquip();
+        btnCloseUpgradeUI();
+        btnCloseShop_Pressed();
     }
 
     public void BtnCloseQuestionUI()
@@ -296,12 +335,19 @@ public class GamePlayManager : MonoBehaviour
         m_QuestionUI.SetActive(false);
     }
 
-    public void OpenMissionUI()
+    public void CloseAllUI()
     {
-        m_MissionUI.SetActive(true);
         BtnCloseInventoryUI();
         BtnCloseQuestionUI();
         BtnCloseBodyEquip();
+        btnCloseShop_Pressed();
+        btnCloseUpgradeUI();
+    }
+
+    public void OpenMissionUI()
+    {
+        m_MissionUI.SetActive(true);
+        CloseAllUI();
         Time.timeScale = 0;
     }
 
@@ -313,21 +359,19 @@ public class GamePlayManager : MonoBehaviour
     }
     #endregion
 
-    #region Button int Setting
+    #region ----------------Button int Setting------------------------
     public void BtnSetting_Pressed()
     {
         Time.timeScale = 0;
         SetState(State.Setting);
-        BtnCloseInventoryUI();
-        BtnCloseQuestionUI();
-        BtnCloseBodyEquip();
+        CloseAllUI();
     }
 
     public void Btn_GoToHomePoint()
     {
         PlayerController.Instance.MovePlayerToOtherPoint(m_PointHome);
         Time.timeScale = 1;
-        BtnCancel_Pressed();
+        BtnCloseSettingUI_Pressed();
     }
 
     public void BtnBack_Pressed()
@@ -338,7 +382,7 @@ public class GamePlayManager : MonoBehaviour
         m_VolumeManager.SetVolumeUI(false);
     }
 
-    public void BtnCancel_Pressed()
+    public void BtnCloseSettingUI_Pressed()
     {
         Time.timeScale = 1;
         SetState(State.Battle);
@@ -355,7 +399,6 @@ public class GamePlayManager : MonoBehaviour
     {
         SetState(State.Volume);
         m_VolumeManager.SetVolumeUI(true);
-
     }
 
     public void BtnSave_Pressed()
@@ -373,9 +416,99 @@ public class GamePlayManager : MonoBehaviour
     }
     #endregion
 
+    public void btnOpenUpgradeUI()
+    {
+        m_UpgradeUI.SetActive(true);
+        BtnCloseQuestionUI();
+        BtnCloseBodyEquip();
+    }
+
+    public void btnCloseUpgradeUI()
+    {
+        m_UpgradeUI.SetActive(false);
+    }
+
+    public void btnSellPressed()
+    {
+        if (m_ShopUI.gameObject.activeSelf == true)
+        {
+            int amountSell = 0;
+            if (!string.IsNullOrEmpty(m_inputSell.text))
+            {
+                amountSell = int.Parse(m_inputSell.text);
+                if (itemChoose != null)
+                {
+                    if (amountSell <= PlayerStats.Instance.playerInventory.GetAmountItem(itemChoose.name))
+                    {
+                        UpdateInventoryPlayer(itemChoose.name, -amountSell);
+                        for (int i = 0; i < amountSell; i++)
+                            PlayerStats.Instance.Coin += itemChoose.price;
+                    }
+                }
+            }
+        }
+        else
+            SetTextWarning("You need to go Shop to Sell item!");
+    }
+
+    public void btnOpenShopUI()
+    {
+        CloseAllUI();
+        m_ShopUI.SetActive(true);
+    }
+
+    public void btnCloseShop_Pressed()
+    {
+        m_ShopUI.SetActive(false);
+    }
+
+    public void BtnTravel_Pressed()
+    {
+        if (nameNpc == "Travel")
+        {
+            if (PlayerStats.Instance.Level >= 5)
+            {
+                Time.timeScale = 1;
+                m_UIselectNPC.SetActive(false);
+                PlayerController.Instance.MovePlayerToOtherPoint(m_PointToGoDarkSky);
+            }
+            else
+                SetTextWarning("Your level need over 5 to travel to DarkSky!");
+        }
+
+        else if (nameNpc == "ModeSurvival")
+        {
+            if (PlayerStats.Instance.Level >= 8)
+            {
+                Time.timeScale = 1;
+                m_UIselectNPC.SetActive(false);
+                PlayerController.Instance.MovePlayerToOtherPoint(m_PointToGoSurvival);
+            }
+            else
+                SetTextWarning("Your level need over 8 to travel to Survival!");
+        }
+    }
+
+    public void Btnleave_Pressed()
+    {
+        ShowUINpc(false, null);
+    }
+
     public void goHomeToLoadPlayer()
     {
         Time.timeScale = 1;
         SceneManager.LoadScene("Home");
+    }
+
+    public void SetColorButtonInteractMobile(Color color)
+    {
+        Color transparent = color;
+        transparent.a = 0.5f;
+        m_btnMobileInteract.color = transparent;
+    }
+
+    private void OnApplicationQuit()
+    {
+        PlayerStats.Instance.saveData();
     }
 }

@@ -27,6 +27,7 @@ public class DialogManager : MonoBehaviour
         if (isWait)
         {
             m_curDialog = dialog;
+            GamePlayManager.Instance.CloseAllUI();
 
             if (curLineDialog >= m_curDialog.Lines.Count)
             {
@@ -41,6 +42,10 @@ public class DialogManager : MonoBehaviour
 
                 else if (nameNpc == "Mission")
                     GamePlayManager.Instance.OpenMissionUI();
+                else if (nameNpc == "Shop")
+                    GamePlayManager.Instance.btnOpenShopUI();
+                else if (nameNpc == "Upgrade")
+                    GamePlayManager.Instance.btnOpenUpgradeUI();
 
                 StartCoroutine(WaitOneSec());
             }

@@ -62,16 +62,18 @@ public class HandlerCollision : MonoBehaviour
         if (m_GetHit)
             return;
 
-        if (collision.CompareTag("Enemy") || collision.CompareTag("AtkEnemy"))
+        if (collision.CompareTag("Enemy") || collision.CompareTag("AtkEnemy") || collision.CompareTag("BulletEnemy"))
         {
             m_GetHit = true;
             m_PlayerCtrl.GetHit(m_GetHit);
 
             m_GetHitTime = 0.5f;
             if (collision.CompareTag("AtkEnemy"))
-                m_PlayerStats.GetHit(collision.gameObject.GetComponentInParent<EnemyController>().m_EnemyCfg.damage);
+                m_PlayerStats.GetHit(collision.gameObject.GetComponentInParent<EnemyHandleCollider>().Damage);
+            else if (collision.CompareTag("BulletEnemy"))
+                m_PlayerStats.GetHit(collision.gameObject.GetComponent<BulletEnemyCtrl>().enmCfg.damage);
             else
-                m_PlayerStats.GetHit(collision.gameObject.GetComponent<EnemyController>().m_EnemyCfg.damage);
+                m_PlayerStats.GetHit(collision.gameObject.GetComponent<EnemyHandleCollider>().Damage);
 
             Vector2 knockbackDirection = transform.position - collision.transform.position;
             knockbackDirection = knockbackDirection.normalized;

@@ -29,8 +29,8 @@ public class Inventory : MonoBehaviour
     public delegate void OnItemChange();
     public OnItemChange onItemChange = delegate { };
 
+    public ListItem listItem;
     public Dictionary<string, int> DictItems = new Dictionary<string, int>();
-
     public List<string> List_NameItemOver1 = new List<string>();
     public List<int> List_AmountItemOver1 = new List<int>();
 
@@ -44,16 +44,9 @@ public class Inventory : MonoBehaviour
         PlayerInventory playerInventory = PlayerStats.Instance.playerInventory;
         DictItems.Clear();
 
-        DictItems.Add("OreGreen", playerInventory.OreGreen);
-        DictItems.Add("OrePurple", playerInventory.OrePurple);
-        DictItems.Add("OreGold", playerInventory.OreGold);
-        DictItems.Add("OreOrange", playerInventory.OreOrange);
-        DictItems.Add("OreRed", playerInventory.OreRed);
-        DictItems.Add("OreCyan", playerInventory.OreCyan);
-        DictItems.Add("OreGreenSuper", playerInventory.OreGreenSuper);
+        for (int i = 0; i < listItem.itemList.Count; i++)
+            DictItems.Add(listItem.itemList[i].name, playerInventory.GetAmountItem(listItem.itemList[i].name));
 
-        DictItems.Add("SwordEvo2", playerInventory.SwordEvo2);
-        DictItems.Add("SwordEvo3", playerInventory.SwordEvo3);
         updateListItemInven();
     }
 

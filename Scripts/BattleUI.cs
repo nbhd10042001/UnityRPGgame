@@ -34,16 +34,17 @@ public class BattleUI : MonoBehaviour
         }
     }
 
+
     private void onCurHpChanged(int curHp, int maxHp)
     {
         m_TxtHP.text = $"{curHp}/{maxHp}";
         m_ImgHpBar.fillAmount = curHp * 1f / maxHp;
     }
 
-    private void onCurManaChanged(int curMana, int maxMana)
+    private void onCurManaChanged(float curMana, float maxMana)
     {
-        m_TxtMana.text = $"{curMana}/{maxMana}";
-        m_ImgManaBar.fillAmount = curMana * 1f / maxMana;
+        m_TxtMana.text = $"{(int)curMana}/{(int)maxMana}";
+        m_ImgManaBar.fillAmount = (int)curMana * 1f / (int)maxMana;
     }
 
     private void onCurExpChanged(int curExp, int maxExp)

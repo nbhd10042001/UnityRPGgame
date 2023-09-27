@@ -18,9 +18,8 @@ public class EnemyController : MonoBehaviour
 
     [SerializeField] private Animator m_Animator;
     [SerializeField] private Transform parentTrans;
-    [SerializeField] private float m_scale = 2;
+    public float m_scale = 1;
     public EnemyCfg m_EnemyCfg;
-
 
     private Rigidbody2D m_rgb2d;
     private State m_curState;
@@ -176,6 +175,8 @@ public class EnemyController : MonoBehaviour
         {
             SetStateEnemy(State.Attack);
             delayAtk = 0;
+            if (m_EnemyCfg.name == "Trunk")
+                SpawmManager.Instance.SpawmBulletTrunk(transform.position, transform.localScale.x);
         }
     }
 

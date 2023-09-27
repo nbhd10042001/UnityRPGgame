@@ -10,7 +10,6 @@ public class UIHpBar : MonoBehaviour
     [SerializeField] private TextMeshProUGUI m_TxtHP;
     [SerializeField] private GameObject UIHp;
 
-    private EnemyCfg enmCfg;
     private EnemyHandleCollider EnmHandl;
 
     private void OnEnable()
@@ -21,7 +20,6 @@ public class UIHpBar : MonoBehaviour
 
     private void Awake()
     {
-        enmCfg = gameObject.GetComponent<EnemyController>().m_EnemyCfg;
         EnmHandl = gameObject.GetComponent<EnemyHandleCollider>();
     }
 
@@ -36,7 +34,7 @@ public class UIHpBar : MonoBehaviour
     private void onEnenmyGetHit()
     {
         int curHp = EnmHandl.Hp;
-        int maxHp = enmCfg.maxHp;
+        int maxHp = EnmHandl.MaxHp;
 
         m_TxtHP.text = $"{curHp}/{maxHp}";
         m_ImgHpBar.fillAmount = curHp * 1f / maxHp;

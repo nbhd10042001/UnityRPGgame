@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -22,27 +21,29 @@ public class InventoryUI : MonoBehaviour
     private void OnEnable()
     {
         Inventory.Instance.onItemChange += UpdateListItemInven;
-        PlayerStats.Instance.OnCurLevelChange += UpdateTextStatPlayer;
+        PlayerStats.Instance.onLevelUp += UpdateTextStatPlayer;
+        GamePlayManager.Instance.OnItemEquipmentChange += UpdateTextStatPlayer;
     }
+
 
     private void Start()
     {
         UpdateListItemInven();
     }
 
-    public void UpdateTextStatPlayer(int level)
+    public void UpdateTextStatPlayer()
     {
         PlayerCfg playerCfg = PlayerStats.Instance.playerCfg;
         PlayerInventory playerInventory = PlayerStats.Instance.playerInventory;
 
         m_txtCapacity.text = $"Capacity: {playerInventory.curCapacity}/{playerInventory.maxCapacity}";
         m_txtStatPlayer.text = $"Damage: {playerCfg.damage}\n" +
+            $"Defend: {playerCfg.defend}\n" +
             $"SpeedAtk: {playerCfg.curSpeedAtk}\n" +
             $"Speed: {playerCfg.curSpeed}\n" +
             $"Speed regen Mana: {playerCfg.speed_regenMana}\n" +
             $"Max HP: {playerCfg.maxHp}\n" +
             $"Max Mana: {playerCfg.maxMana}\n" +
-            $"Defend: {playerCfg.defend}\n" +
             $"Max Capacity Inventory: {playerInventory.maxCapacity}\n";
     }
 
@@ -103,7 +104,7 @@ public class InventoryUI : MonoBehaviour
         m_InventoryTab.SetActive(false);
         m_StatPlayerTab.SetActive(true);
         GamePlayManager.Instance.BtnCloseInfoMaterialTab();
-        UpdateTextStatPlayer(0);
+        UpdateTextStatPlayer();
     }
 
 

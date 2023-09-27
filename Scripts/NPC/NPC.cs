@@ -35,6 +35,7 @@ public class NPC : MonoBehaviour
         {
             m_MessBox.SetActive(true);
             GamePlayManager.Instance.ShowBoxNameNPC(true, m_nameNPC);
+            GamePlayManager.Instance.SetColorButtonInteractMobile(Color.yellow);
         }
     }
 
@@ -46,6 +47,10 @@ public class NPC : MonoBehaviour
             DialogManager.Instance.ResetCurLineDialog();
             GamePlayManager.Instance.ShowDialogUI(false);
             GamePlayManager.Instance.ShowBoxNameNPC(false, "");
+            GamePlayManager.Instance.btnCloseShop_Pressed();
+            GamePlayManager.Instance.btnCloseUpgradeUI();
+            GamePlayManager.Instance.SetColorButtonInteractMobile(Color.gray);
+
         }
     }
 }

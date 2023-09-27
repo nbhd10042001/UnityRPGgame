@@ -20,35 +20,40 @@ public class SkillManager : MonoBehaviour
     private void Awake()
     {
         imgSkill.sprite = magicCfg.sprite;
+        playerController = PlayerController.Instance;
+        if (playerController != null)
+        {
+            if (magicCfg.nameSkill == "bolt")
+                playerController.OnCDSkill_1 += CDSkill;
+            else if (magicCfg.nameSkill == "charged")
+                playerController.OnCDSkill_2 += CDSkill;
+            else if (magicCfg.nameSkill == "crossed")
+                playerController.OnCDSkill_3 += CDSkill;
+            else if (magicCfg.nameSkill == "pulse")
+                playerController.OnCDSkill_4 += CDSkill;
+            else if (magicCfg.nameSkill == "spark")
+                playerController.OnCDSkill_5 += CDSkill;
+            else if (magicCfg.nameSkill == "waveform")
+                playerController.OnCDSkill_6 += CDSkill;
+        }
     }
 
     private void OnEnable()
     {
         PlayerStats.Instance.OnCurLevelChange += CheckLevelPlayer;
         m_battleUI.OnClickInfoSkill += ResetCount;
+    }
 
-        playerController = PlayerController.Instance;
-        if (playerController != null)
-        {
-            if (magicCfg.nameSkill == "bolt")
-                playerController.OnCDSkill_1 += StartCDSkill;
-            else if (magicCfg.nameSkill == "charged")
-                playerController.OnCDSkill_2 += StartCDSkill;
-            else if (magicCfg.nameSkill == "crossed")
-                playerController.OnCDSkill_3 += StartCDSkill;
-            else if (magicCfg.nameSkill == "pulse")
-                playerController.OnCDSkill_4 += StartCDSkill;
-            else if (magicCfg.nameSkill == "spark")
-                playerController.OnCDSkill_5 += StartCDSkill;
-            else if (magicCfg.nameSkill == "waveform")
-                playerController.OnCDSkill_6 += StartCDSkill;
-        }
+    private void OnDisable()
+    {
+        if (PlayerStats.Instance != null)
+            PlayerStats.Instance.OnCurLevelChange -= CheckLevelPlayer;
+        m_battleUI.OnClickInfoSkill -= ResetCount;
     }
 
     private void Start()
     {
         CheckLevelPlayer(PlayerStats.Instance.Level);
-
     }
 
     private void CheckLevelPlayer(int level)
@@ -59,23 +64,12 @@ public class SkillManager : MonoBehaviour
             m_ImgMagicCD.fillAmount = 1f;
     }
 
-    private void StartCDSkill()
+    private void CDSkill(float cur_cd)
     {
-        StartCoroutine(CD_Skill());
+        m_ImgMagicCD.fillAmount = cur_cd * 1f / magicCfg.cd;
     }
 
-    private IEnumerator CD_Skill()
-    {
-        cur_cd = magicCfg.cd;
-        while (true)
-        {
-            cur_cd -= Time.deltaTime;
-            m_ImgMagicCD.fillAmount = cur_cd * 1f / magicCfg.cd;
-            if (cur_cd <= 0)
-                break;
-            yield return null;
-        }
-    }
+    
 
     private void ResetCount()
     {

@@ -13,6 +13,7 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private GameObject m_MenuUI;
     [SerializeField] private GameObject m_CreateUI;
+    [SerializeField] private GameObject m_TurtorialUI;
 
 
     [SerializeField] private TextMeshProUGUI m_nameChar;
@@ -27,11 +28,14 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        playerCfg = PlayerManager.Instance.LoadDataCurPlayer();
-        if (playerCfg != null)
+        if (File.Exists(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg()))
         {
+            playerCfg = PlayerManager.Instance.LoadDataCurPlayer();
             m_nameChar.text = playerCfg.name;
         }
+        else
+            m_nameChar.text = null;
+
         SetUI(UI.Menu);
     }
 
@@ -69,15 +73,15 @@ public class UIManager : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(m_fieldName.text))
         {
-            if (!Directory.Exists(Application.dataPath + "/Resources/save"))
+            if (!Directory.Exists(Application.persistentDataPath + "/Resources/save"))
             {
-                Directory.CreateDirectory(Application.dataPath + "/Resources/save");
-                Directory.CreateDirectory(Application.dataPath + "/Resources/save/curPlayer");
-                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot1");
-                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot2");
-                Directory.CreateDirectory(Application.dataPath + "/Resources/save/slot3");
+                Directory.CreateDirectory(Application.persistentDataPath + "/Resources/save");
+                Directory.CreateDirectory(Application.persistentDataPath + "/Resources/save/curPlayer");
+                Directory.CreateDirectory(Application.persistentDataPath + "/Resources/save/slot1");
+                Directory.CreateDirectory(Application.persistentDataPath + "/Resources/save/slot2");
+                Directory.CreateDirectory(Application.persistentDataPath + "/Resources/save/slot3");
             }
-                
+
             m_curName = m_fieldName.text;
             m_SLManager.CreateNewPlayer();
         }
@@ -88,9 +92,10 @@ public class UIManager : MonoBehaviour
 
     public void btnPlay_Pressed()
     {
-        
         if (File.Exists(pathSave.Instance.GetPathSave_curPlayer_PlayerCfg()))
+        {
             SceneManager.LoadScene("Home");
+        }
         else
             StartCoroutine(NameCharNotFound(UI.Menu));
     }
@@ -146,5 +151,15 @@ public class UIManager : MonoBehaviour
     {
         m_VolumeManager.SetVolumeUI(true);
         SetUI(UI.Volume);
+    }
+
+    public void btnTurtorial_Pressed()
+    {
+        m_TurtorialUI.SetActive(true);
+    }
+
+    public void btnCloseTurtorial()
+    {
+        m_TurtorialUI.SetActive(false);
     }
 }

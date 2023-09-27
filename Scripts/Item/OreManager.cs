@@ -45,8 +45,7 @@ public class OreManager : MonoBehaviour
             if (isNew)
                 PlayerStats.Instance.playerCfg.UpdateQuantyQues(gameObject);
 
-            if(PlayerStats.Instance.OnQuantyQuesChange != null)
-                PlayerStats.Instance.OnQuantyQuesChange();
+            PlayerStats.Instance.onQuantyQuesChange.Invoke();
             SpawmManager.Instance.ReleaseOre(this, m_itemOre.name);
         }
 

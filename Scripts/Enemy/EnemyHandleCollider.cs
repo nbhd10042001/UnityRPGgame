@@ -10,6 +10,8 @@ public class EnemyHandleCollider : MonoBehaviour
     private EnemyCfg m_EnemyCfg;
     private EnemyController m_EnmCtrl;
     private int m_curHp;
+    private int m_maxHp;
+    private int m_curDamage;
     private bool m_GetHit;
 
     private void Awake()
@@ -20,7 +22,18 @@ public class EnemyHandleCollider : MonoBehaviour
 
     private void OnEnable()
     {
-        Hp = m_EnemyCfg.maxHp;
+        if (PlayerStats.Instance != null)
+        {
+            Hp = m_EnemyCfg.maxHp * PlayerStats.Instance.Level;
+            MaxHp = m_EnemyCfg.maxHp * PlayerStats.Instance.Level;
+            Damage = m_EnemyCfg.damage * PlayerStats.Instance.Level;
+        }
+        else
+        {
+            Hp = m_EnemyCfg.maxHp;
+            MaxHp = m_EnemyCfg.maxHp;
+            Damage = m_EnemyCfg.damage;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -46,11 +59,10 @@ public class EnemyHandleCollider : MonoBehaviour
             {
                 SpawmManager.Instance.SpawmCoin(transform.position, m_EnemyCfg.coinDrop);
                 Vector2 pos = new Vector2(transform.position.x, transform.position.y + 0.5f);
-                SpawmManager.Instance.SpawmExp(pos, m_EnemyCfg.Exp);
+                SpawmManager.Instance.SpawmExp(pos, m_EnemyCfg.Exp * PlayerStats.Instance.Level);
 
                 playerCfg.UpdateQuantyQues(gameObject);
-                if (PlayerStats.Instance.OnQuantyQuesChange != null)
-                    PlayerStats.Instance.OnQuantyQuesChange();
+                PlayerStats.Instance.onQuantyQuesChange.Invoke();
 
                 GetHit = false;
                 Hp = m_EnemyCfg.maxHp;
@@ -68,6 +80,18 @@ public class EnemyHandleCollider : MonoBehaviour
             if (OnEnemyGetHit != null)
                 OnEnemyGetHit(); 
         }
+    }
+
+    public int MaxHp
+    {
+        get { return m_maxHp; }
+        set { m_maxHp = value; }
+    }
+
+    public int Damage
+    {
+        get { return m_curDamage; }
+        set { m_curDamage = value; }
     }
 
     private void GetHitFalse()

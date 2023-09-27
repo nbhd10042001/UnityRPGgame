@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
 
-
 public class PlayerController : MonoBehaviour
 {
     public Action<string> OnActiveEnemy;
@@ -20,12 +19,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public Action OnCDSkill_1;
-    public Action OnCDSkill_2;
-    public Action OnCDSkill_3;
-    public Action OnCDSkill_4;
-    public Action OnCDSkill_5;
-    public Action OnCDSkill_6;
+    public Action<float> OnCDSkill_1;
+    public Action<float> OnCDSkill_2;
+    public Action<float> OnCDSkill_3;
+    public Action<float> OnCDSkill_4;
+    public Action<float> OnCDSkill_5;
+    public Action<float> OnCDSkill_6;
 
     [SerializeField] private LayerMask m_NPCLayer;
     [SerializeField] private LayerMask m_RegionEnemyLayer;
@@ -132,6 +131,12 @@ public class PlayerController : MonoBehaviour
     private void OnDisable()
     {
         m_PlayerInput.Disable();
+        skill_1 = true;
+        skill_2 = true;
+        skill_3 = true;
+        skill_4 = true;
+        skill_5 = true;
+        skill_6 = true;
     }
 
     private void Start()
@@ -200,6 +205,47 @@ public class PlayerController : MonoBehaviour
 
         if (m_MovementInput.x != 0 || m_MovementInput.y != 0)
         {
+            if (m_MovementInput.x > 0 && (m_MovementInput.y < 0.3f && m_MovementInput.y > -0.3f))
+            {
+                m_MovementInput.x = 1;
+                m_MovementInput.y = 0;
+            }
+            else if (m_MovementInput.x < 0 && (m_MovementInput.y < 0.3f && m_MovementInput.y > -0.3f))
+            {
+                m_MovementInput.x = -1;
+                m_MovementInput.y = 0;
+            }
+            else if (m_MovementInput.y > 0 && (m_MovementInput.x < 0.3f && m_MovementInput.x > -0.3f))
+            {
+                m_MovementInput.x = 0;
+                m_MovementInput.y = 1;
+            }
+            else if (m_MovementInput.y < 0 && (m_MovementInput.x < 0.3f && m_MovementInput.x > -0.3f))
+            {
+                m_MovementInput.x = 0;
+                m_MovementInput.y = -1;
+            }
+            else if (m_MovementInput.x > 0.3f && m_MovementInput.y > 0.3f)
+            {
+                m_MovementInput.x = 0.7f;
+                m_MovementInput.y = 0.7f;
+            }
+            else if (m_MovementInput.x > 0.3f && m_MovementInput.y < -0.3f)
+            {
+                m_MovementInput.x = 0.7f;
+                m_MovementInput.y = -0.7f;
+            }
+            else if (m_MovementInput.x < -0.3f && m_MovementInput.y > 0.3f)
+            {
+                m_MovementInput.x = -0.7f;
+                m_MovementInput.y = 0.7f;
+            }
+            else if (m_MovementInput.x < -0.3f && m_MovementInput.y < -0.3f)
+            {
+                m_MovementInput.x = -0.7f;
+                m_MovementInput.y = -0.7f;
+            }
+
             m_IsMoving = true;
             m_Animator.SetFloat("moveX", m_MovementInput.x);
             m_Animator.SetFloat("moveY", m_MovementInput.y);
@@ -256,8 +302,8 @@ public class PlayerController : MonoBehaviour
                 skill_1 = false;
                 PlayerStats.Instance.Mana -= MagicBolt.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicBolt.nameSkill);
-                Invoke("ResetSkill_1", MagicBolt.cd);
-                OnCDSkill_1();
+                StartCoroutine(ResetSkill_1());
+
             }
         }
         else if (context.performed && context.control.name.ToString() == "2")
@@ -268,8 +314,8 @@ public class PlayerController : MonoBehaviour
                 skill_2 = false;
                 PlayerStats.Instance.Mana -= MagicCharged.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicCharged.nameSkill);
-                Invoke("ResetSkill_2", MagicCharged.cd);
-                OnCDSkill_2();
+                StartCoroutine(ResetSkill_2());
+
             }
         }
 
@@ -281,8 +327,8 @@ public class PlayerController : MonoBehaviour
                 skill_3 = false;
                 PlayerStats.Instance.Mana -= MagicCrossed.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicCrossed.nameSkill);
-                Invoke("ResetSkill_3", MagicCrossed.cd);
-                OnCDSkill_3();
+                StartCoroutine(ResetSkill_3());
+
             }
         }
 
@@ -294,8 +340,8 @@ public class PlayerController : MonoBehaviour
                 skill_4 = false;
                 PlayerStats.Instance.Mana -= MagicPulse.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicPulse.nameSkill);
-                Invoke("ResetSkill_4", MagicPulse.cd);
-                OnCDSkill_4();
+                StartCoroutine(ResetSkill_4());
+
             }
         }
 
@@ -307,8 +353,8 @@ public class PlayerController : MonoBehaviour
                 skill_5 = false;
                 PlayerStats.Instance.Mana -= MagicSpark.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicSpark.nameSkill);
-                Invoke("ResetSkill_5", MagicSpark.cd);
-                OnCDSkill_5();
+                StartCoroutine(ResetSkill_5());
+
             }
         }
 
@@ -320,35 +366,92 @@ public class PlayerController : MonoBehaviour
                 skill_6 = false;
                 PlayerStats.Instance.Mana -= MagicWaveForm.consumable_mana;
                 SpawmManager.Instance.SpawmMagic(transform.position, MagicWaveForm.nameSkill);
-                Invoke("ResetSkill_6", MagicWaveForm.cd);
-                OnCDSkill_6();
+                StartCoroutine(ResetSkill_6());
             }
         }
     }
 
-    private void ResetSkill_1()
+    private IEnumerator ResetSkill_1()
     {
+        float cur_cd = MagicBolt.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_1(cur_cd);
+            yield return null;
+        }
         skill_1 = true;
     }
-    private void ResetSkill_2()
+
+    private IEnumerator ResetSkill_2()
     {
+        float cur_cd = MagicCharged.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_2(cur_cd);
+            yield return null;
+        }
         skill_2 = true;
     }
 
-    private void ResetSkill_3()
+    private IEnumerator ResetSkill_3()
     {
+        float cur_cd = MagicCrossed.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_3(cur_cd);
+            yield return null;
+        }
         skill_3 = true;
     }
-    private void ResetSkill_4()
+
+    private IEnumerator ResetSkill_4()
     {
+        float cur_cd = MagicPulse.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_4(cur_cd);
+            yield return null;
+        }
         skill_4 = true;
     }
-    private void ResetSkill_5()
+
+    private IEnumerator ResetSkill_5()
     {
+        float cur_cd = MagicSpark.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_5(cur_cd);
+            yield return null;
+        }
         skill_5 = true;
     }
-    private void ResetSkill_6()
+
+    private IEnumerator ResetSkill_6()
     {
+        float cur_cd = MagicWaveForm.cd;
+        while (true)
+        {
+            cur_cd -= Time.deltaTime;
+            if (cur_cd <= 0)
+                break;
+            OnCDSkill_6(cur_cd);
+            yield return null;
+        }
         skill_6 = true;
     }
     #endregion

@@ -55,6 +55,57 @@ public class EnemyPool
 }
 #endregion
 
+#region -------------------- Bullet enemy Pool ---------------------------
+[System.Serializable]
+public class BulletEnemyPool
+{
+    public BulletEnemyCtrl prefab;
+    public List<BulletEnemyCtrl> inactiveObjs;
+    public List<BulletEnemyCtrl> activeObjs;
+    public BulletEnemyCtrl Spawm(Vector3 position, Transform parent)
+    {
+        if (inactiveObjs.Count == 0)
+        {
+            BulletEnemyCtrl newObj = GameObject.Instantiate(prefab, parent);
+            newObj.transform.position = position;
+            newObj.name = prefab.name;
+            activeObjs.Add(newObj);
+            return newObj;
+        }
+        else
+        {
+            BulletEnemyCtrl oldObj = inactiveObjs[0];
+            oldObj.gameObject.SetActive(true);
+            oldObj.transform.SetParent(parent);
+            oldObj.transform.position = position;
+            activeObjs.Add(oldObj);
+            inactiveObjs.RemoveAt(0);
+            return oldObj;
+        }
+    }
+    public void Release(BulletEnemyCtrl obj)
+    {
+        if (activeObjs.Contains(obj))
+        {
+            inactiveObjs.Add(obj);
+            activeObjs.Remove(obj);
+            obj.gameObject.SetActive(false);
+        }
+    }
+    // clear pool
+    public void Clear()
+    {
+        while (activeObjs.Count > 0)
+        {
+            BulletEnemyCtrl obj = activeObjs[0];
+            obj.gameObject.SetActive(false);
+            activeObjs.RemoveAt(0);
+            inactiveObjs.Add(obj);
+        }
+    }
+}
+#endregion
+
 #region ------------------- magic pool --------------------------
 [System.Serializable]
 public class MagicPool
@@ -364,6 +415,58 @@ public class SwordPool
     }
 }
 #endregion
+
+#region ------------------------ Shield pool -------------------------
+[System.Serializable]
+public class ShieldPool
+{
+    public ShieldManager prefab;
+    public List<ShieldManager> inactiveObjs;
+    public List<ShieldManager> activeObjs;
+    public ShieldManager Spawm(Vector3 position, Transform parent)
+    {
+        if (inactiveObjs.Count == 0)
+        {
+            ShieldManager newObj = GameObject.Instantiate(prefab, parent);
+            newObj.transform.position = position;
+            newObj.name = prefab.name;
+            activeObjs.Add(newObj);
+            return newObj;
+        }
+        else
+        {
+            ShieldManager oldObj = inactiveObjs[0];
+            oldObj.gameObject.SetActive(true);
+            oldObj.transform.SetParent(parent);
+            oldObj.transform.position = position;
+            activeObjs.Add(oldObj);
+            inactiveObjs.RemoveAt(0);
+            return oldObj;
+        }
+    }
+    public void Release(ShieldManager obj)
+    {
+        if (activeObjs.Contains(obj))
+        {
+            inactiveObjs.Add(obj);
+            activeObjs.Remove(obj);
+            obj.gameObject.SetActive(false);
+        }
+    }
+    // clear pool
+    public void Clear()
+    {
+        while (activeObjs.Count > 0)
+        {
+            ShieldManager obj = activeObjs[0];
+            obj.gameObject.SetActive(false);
+            activeObjs.RemoveAt(0);
+            inactiveObjs.Add(obj);
+        }
+    }
+}
+#endregion
+
 public class SpawmManager : MonoBehaviour
 {
     // Singleton
@@ -390,6 +493,9 @@ public class SpawmManager : MonoBehaviour
     [SerializeField] private EnemyPool m_BatPool;
     [SerializeField] private EnemyPool m_BlueBirdPool;
     [SerializeField] private EnemyPool m_ChameleonPool;
+    [SerializeField] private EnemyPool m_ChickenPool;
+    [SerializeField] private EnemyPool m_TrunkPool;
+    [SerializeField] private BulletEnemyPool m_TrunkBulletPool;
 
     [SerializeField] private OrePool m_OreGreenPool;
     [SerializeField] private OrePool m_OrePurplePool;
@@ -414,6 +520,17 @@ public class SpawmManager : MonoBehaviour
 
     [SerializeField] private SwordPool m_SwordEvo2;
     [SerializeField] private SwordPool m_SwordEvo3;
+    [SerializeField] private SwordPool m_SwordEvo4;
+    [SerializeField] private SwordPool m_SwordEvo6;
+    [SerializeField] private SwordPool m_SwordEvo8;
+    [SerializeField] private SwordPool m_SwordEvo10;
+
+    [SerializeField] private ShieldPool m_Shield01;
+    [SerializeField] private ShieldPool m_Shield02;
+    [SerializeField] private ShieldPool m_Shield03;
+    [SerializeField] private ShieldPool m_Shield04;
+    [SerializeField] private ShieldPool m_Shield05;
+    [SerializeField] private ShieldPool m_Shield06;
 
     [SerializeField] private HitAnimPool m_Hit_1_Pool;
     [SerializeField] private HitAnimPool m_Hit_2_Pool;
@@ -425,6 +542,18 @@ public class SpawmManager : MonoBehaviour
     private void Start()
     {
         SpawmExp(PlayerController.Instance.transform.position, 100);
+    }
+
+    public BulletEnemyCtrl SpawmBulletTrunk(Vector3 position, float scalex)
+    {
+        BulletEnemyCtrl obj = m_TrunkBulletPool.Spawm(position, transform);
+        obj.SetStart(scalex);
+        return obj;
+    }
+
+    public void ReleaseBulletTrunk(BulletEnemyCtrl obj)
+    {
+        m_TrunkBulletPool.Release(obj);
     }
 
 
@@ -499,6 +628,26 @@ public class SpawmManager : MonoBehaviour
             SwordManager obj = m_SwordEvo3.Spawm(position, transform);
             return obj;
         }
+        else if (name == "SwordEvo4")
+        {
+            SwordManager obj = m_SwordEvo4.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "SwordEvo6")
+        {
+            SwordManager obj = m_SwordEvo6.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "SwordEvo8")
+        {
+            SwordManager obj = m_SwordEvo8.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "SwordEvo10")
+        {
+            SwordManager obj = m_SwordEvo10.Spawm(position, transform);
+            return obj;
+        }
         return null;
     }
 
@@ -508,7 +657,67 @@ public class SpawmManager : MonoBehaviour
             m_SwordEvo2.Release(obj);
         else if (name == "SwordEvo3")
             m_SwordEvo3.Release(obj);
+        else if (name == "SwordEvo4")
+            m_SwordEvo4.Release(obj);
+        else if (name == "SwordEvo6")
+            m_SwordEvo6.Release(obj);
+        else if (name == "SwordEvo8")
+            m_SwordEvo8.Release(obj);
+        else if (name == "SwordEvo10")
+            m_SwordEvo10.Release(obj);
+    }
+    #endregion
 
+    #region -------------- spawm shield -------------------------------
+    public ShieldManager SpawmShield(Vector3 position, string name)
+    {
+        if (name == "Shield01")
+        {
+            ShieldManager obj = m_Shield01.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "Shield02")
+        {
+            ShieldManager obj = m_Shield02.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "Shield03")
+        {
+            ShieldManager obj = m_Shield03.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "Shield04")
+        {
+            ShieldManager obj = m_Shield04.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "Shield05")
+        {
+            ShieldManager obj = m_Shield05.Spawm(position, transform);
+            return obj;
+        }
+        else if (name == "Shield06")
+        {
+            ShieldManager obj = m_Shield06.Spawm(position, transform);
+            return obj;
+        }
+        return null;
+    }
+
+    public void ReleaseShield(ShieldManager obj, string name)
+    {
+        if (name == "Shield01")
+            m_Shield01.Release(obj);
+        else if (name == "Shield02")
+            m_Shield02.Release(obj);
+        else if (name == "Shield03")
+            m_Shield03.Release(obj);
+        else if (name == "Shield04")
+            m_Shield04.Release(obj);
+        else if (name == "Shield05")
+            m_Shield05.Release(obj);
+        else if (name == "Shield06")
+            m_Shield06.Release(obj);
     }
     #endregion
 
@@ -572,6 +781,18 @@ public class SpawmManager : MonoBehaviour
             obj.SetStart();
             return obj;
         }
+        else if (name == "Chicken")
+        {
+            EnemyController obj = m_ChickenPool.Spawm(position, transform);
+            obj.SetStart();
+            return obj;
+        }
+        else if (name == "Trunk")
+        {
+            EnemyController obj = m_TrunkPool.Spawm(position, transform);
+            obj.SetStart();
+            return obj;
+        }
         else
             return null;
     }
@@ -586,6 +807,10 @@ public class SpawmManager : MonoBehaviour
             m_BlueBirdPool.Release(obj);
         else if (name == "Chameleon")
             m_ChameleonPool.Release(obj);
+        else if (name == "Chicken")
+            m_ChickenPool.Release(obj);
+        else if (name == "Trunk")
+            m_TrunkPool.Release(obj);
     }
     #endregion
 

@@ -21,8 +21,9 @@ public class MissionSlot : MonoBehaviour
 
     private void OnEnable()
     {
-        PlayerStats.Instance.OnQuantyQuesChange += UpdateQuantyEachQuestion;
+        PlayerStats.Instance.onQuantyQuesChange += UpdateQuantyEachQuestion;
     }
+
 
     public void AddQues(QuesCfg newQues)
     {

@@ -11,7 +11,7 @@ public class CoinManager : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            PlayerStats.Instance.Coin += value;
+            PlayerStats.Instance.Coin += value * PlayerStats.Instance.Level;
             SpawmManager.Instance.ReleaseCoin(this, nameCoin);
         }
     }
